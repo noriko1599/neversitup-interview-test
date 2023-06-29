@@ -1,0 +1,109 @@
+# docker-compose.yml
+
+version: "3.7"
+services:
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./api-gateway:/app
+      - /app/node_modules
+    command: npm run start:dev
+    depends_on:
+      - db
+      - rabbitmq
+      - mongo
+      - elasticsearch
+
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./user-service:/app
+      - /app/node_modules
+    command: npm run start:dev
+    depends_on:
+      - db
+      - rabbitmq
+      - mongo
+      - elasticsearch
+
+  product-service:
+    build:
+      context: ./product-service
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3002:3000"
+    volumes:
+      - ./product-service:/app
+      - /app/node_modules
+    command: npm run start:dev
+    depends_on:
+      - db
+      - rabbitmq
+      - mongo
+      - elasticsearch
+
+  order-service:
+    build:
+      context: ./order-service
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3003:3000"
+    volumes:
+      - ./order-service:/app
+      - /app/node_modules
+    command: npm run start:dev
+    depends_on:
+      - db
+      - rabbitmq
+      - mongo
+      - elasticsearch
+
+  db:
+    image: postgres:13-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: youruser
+      POSTGRES_PASSWORD: yourpassword
+      POSTGRES_DB: yourdb
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+  mongo:
+    image: mongo
+    restart: always
+    ports:
+      - "27017:27017"
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.13.1
+    environment:
+      - node.name=elasticsearch1
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - esdata1:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+
+volumes:
+  dbdata:
+  esdata1:
