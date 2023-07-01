@@ -1,12 +1,18 @@
-import { Controller, Get } from '@nestjs/common';
-import { OrderService } from './order.service';
+import {
+  OrderCreated,
+  OrderCreatedPattern,
+} from '@app/shared/events/order/order-created.event';
+import { Body, Controller, Post } from '@nestjs/common';
+import { EventPattern, MessagePattern } from '@nestjs/microservices';
 
 @Controller()
 export class OrderController {
-  constructor(private readonly orderService: OrderService) {}
+  @Post()
+  async create(@Body() payload: any) {}
 
-  @Get()
-  getHello(): string {
-    return this.orderService.getHello();
-  }
+  @MessagePattern('create_order')
+  async handleCreateOrder(payload: any) {}
+
+  @EventPattern(OrderCreatedPattern)
+  async handleOrderCreated(event: OrderCreated) {}
 }

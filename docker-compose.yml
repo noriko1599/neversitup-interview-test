@@ -1,113 +1,41 @@
-# docker-compose.yml
+version: '3.7'
 
-version: "3.7"
 services:
-  # api-gateway:
-  #   build:
-  #     context: ./
-  #     dockerfile: ./apps/api-gateway/Dockerfile.dev
-  #   restart: always
-  #   ports:
-  #     - "3000:3000"
-  #   volumes:
-  #     - ./apps/api-gateway:/app
-  #     - /app/node_modules
-  #   command: npm run start:dev
-  #   depends_on:
-  #     - db
-  #     - rabbitmq
-  #     - mongo
-  #     - elasticsearch
-
-  # user:
-  #   build:
-  #     context: ./
-  #     dockerfile: ./apps/user/Dockerfile.dev
-  #   restart: always
-  #   ports:
-  #     - "3001:3000"
-  #   volumes:
-  #     - ./apps/user:/app
-  #     - /app/node_modules
-  #   command: npm run start:dev
-  #   depends_on:
-  #     - db
-  #     - rabbitmq
-  #     - mongo
-  #     - elasticsearch
-
-  # product:
-  #   build:
-  #     context: ./
-  #     dockerfile: ./apps/product/Dockerfile.dev
-  #   restart: always
-  #   ports:
-  #     - "3002:3000"
-  #   volumes:
-  #     - ./apps/product:/app
-  #     - /app/node_modules
-  #   command: npm run start:dev
-  #   depends_on:
-  #     - db
-  #     - rabbitmq
-  #     - mongo
-  #     - elasticsearch
-
-  # order:
-  #   build:
-  #     context: ./
-  #     dockerfile: ./apps/order/Dockerfile.dev
-  #   restart: always
-  #   ports:
-  #     - "3003:3000"
-  #   volumes:
-  #     - ./apps/order:/app
-  #     - /app/node_modules
-  #   command: npm run start:dev
-  #   depends_on:
-  #     - db
-  #     - rabbitmq
-  #     - mongo
-  #     - elasticsearch
-
-  db:
-    image: postgres:13-alpine
-    restart: always
+  eventstore.db:
+    image: eventstore/eventstore:21.10.0-buster-slim
     environment:
-      POSTGRES_USER: youruser
-      POSTGRES_PASSWORD: yourpassword
-      POSTGRES_DB: yourdb
+      - EVENTSTORE_CLUSTER_SIZE=1
+      - EVENTSTORE_RUN_PROJECTIONS=All
+      - EVENTSTORE_START_STANDARD_PROJECTIONS=true
+      - EVENTSTORE_EXT_TCP_PORT=1113
+      - EVENTSTORE_HTTP_PORT=2113
+      - EVENTSTORE_INSECURE=true
+      - EVENTSTORE_ENABLE_EXTERNAL_TCP=true
+      - EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP=true
+    ports:
+      - "1113:1113"
+      - "2113:2113"
     volumes:
-      - dbdata:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-  mongo:
-    image: mongo
-    restart: always
-    ports:
-      - "27017:27017"
-  rabbitmq:
-    image: rabbitmq:3-management-alpine
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.13.1
-    environment:
-      - node.name=elasticsearch1
-      - discovery.type=single-node
-      - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-    volumes:
-      - esdata1:/usr/share/elasticsearch/data
-    ports:
-      - "9200:9200"
-      - "9300:9300"
+      - ./_infrastructure/eventstore/data:/var/lib/eventstore
+      - ./_infrastructure/eventstore/logs:/var/log/eventstore
 
-volumes:
-  dbdata:
-  esdata1:
+  postgres:
+    image: postgres:latest
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - 5432:5432
+    volumes:
+      - ./_infrastructure/postgres/data:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    ports:
+      - 8081:80
+    volumes:
+      - ./_infrastructure/pgadmin/data:/var/lib/pgadmin
