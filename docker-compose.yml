@@ -2,69 +2,73 @@
 
 version: "3.7"
 services:
-  api-gateway:
-    build:
-      context: ./api-gateway
-      dockerfile: Dockerfile.dev
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./api-gateway:/app
-      - /app/node_modules
-    command: npm run start:dev
-    depends_on:
-      - db
-      - rabbitmq
-      - mongo
-      - elasticsearch
+  # api-gateway:
+  #   build:
+  #     context: ./
+  #     dockerfile: ./apps/api-gateway/Dockerfile.dev
+  #   restart: always
+  #   ports:
+  #     - "3000:3000"
+  #   volumes:
+  #     - ./apps/api-gateway:/app
+  #     - /app/node_modules
+  #   command: npm run start:dev
+  #   depends_on:
+  #     - db
+  #     - rabbitmq
+  #     - mongo
+  #     - elasticsearch
 
-  user-service:
-    build:
-      context: ./user-service
-      dockerfile: Dockerfile.dev
-    ports:
-      - "3001:3000"
-    volumes:
-      - ./user-service:/app
-      - /app/node_modules
-    command: npm run start:dev
-    depends_on:
-      - db
-      - rabbitmq
-      - mongo
-      - elasticsearch
+  # user:
+  #   build:
+  #     context: ./
+  #     dockerfile: ./apps/user/Dockerfile.dev
+  #   restart: always
+  #   ports:
+  #     - "3001:3000"
+  #   volumes:
+  #     - ./apps/user:/app
+  #     - /app/node_modules
+  #   command: npm run start:dev
+  #   depends_on:
+  #     - db
+  #     - rabbitmq
+  #     - mongo
+  #     - elasticsearch
 
-  product-service:
-    build:
-      context: ./product-service
-      dockerfile: Dockerfile.dev
-    ports:
-      - "3002:3000"
-    volumes:
-      - ./product-service:/app
-      - /app/node_modules
-    command: npm run start:dev
-    depends_on:
-      - db
-      - rabbitmq
-      - mongo
-      - elasticsearch
+  # product:
+  #   build:
+  #     context: ./
+  #     dockerfile: ./apps/product/Dockerfile.dev
+  #   restart: always
+  #   ports:
+  #     - "3002:3000"
+  #   volumes:
+  #     - ./apps/product:/app
+  #     - /app/node_modules
+  #   command: npm run start:dev
+  #   depends_on:
+  #     - db
+  #     - rabbitmq
+  #     - mongo
+  #     - elasticsearch
 
-  order-service:
-    build:
-      context: ./order-service
-      dockerfile: Dockerfile.dev
-    ports:
-      - "3003:3000"
-    volumes:
-      - ./order-service:/app
-      - /app/node_modules
-    command: npm run start:dev
-    depends_on:
-      - db
-      - rabbitmq
-      - mongo
-      - elasticsearch
+  # order:
+  #   build:
+  #     context: ./
+  #     dockerfile: ./apps/order/Dockerfile.dev
+  #   restart: always
+  #   ports:
+  #     - "3003:3000"
+  #   volumes:
+  #     - ./apps/order:/app
+  #     - /app/node_modules
+  #   command: npm run start:dev
+  #   depends_on:
+  #     - db
+  #     - rabbitmq
+  #     - mongo
+  #     - elasticsearch
 
   db:
     image: postgres:13-alpine

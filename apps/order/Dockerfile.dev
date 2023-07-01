@@ -1,9 +1,21 @@
-# Dockerfile.dev
+# Use an official Node runtime as the base image
+FROM node:16
 
-FROM node:alpine
+# Set the working directory
 WORKDIR /app
-COPY package*.json ./
+
+# Copy package.json and package-lock.json
+COPY ../../package*.json ./
+
+# Install NestJS CLI and dependencies
+# RUN npm i -g @nestjs/cli 
 RUN npm install
-COPY . .
+
+# Bundle app source
+COPY ../../ .
+
+# Default port exposure
 EXPOSE 3000
-CMD ["npm", "run", "start:dev"]
+
+# Start the app with hot-reloading enabled
+CMD ["npm", "run", "start:dev", "order"]

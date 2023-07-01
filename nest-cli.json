@@ -1,24 +1,15 @@
 {
   "$schema": "https://json.schemastore.org/nest-cli",
   "collection": "@nestjs/schematics",
-  "sourceRoot": "apps/neversitup-backend-interview-test/src",
+  "sourceRoot": "apps/api-gateway/src",
   "compilerOptions": {
     "deleteOutDir": true,
     "webpack": true,
-    "tsConfigPath": "apps/neversitup-backend-interview-test/tsconfig.app.json"
+    "tsConfigPath": "apps/api-gateway/tsconfig.app.json"
   },
   "monorepo": true,
-  "root": "apps/neversitup-backend-interview-test",
+  "root": "apps/api-gateway",
   "projects": {
-    "neversitup-backend-interview-test": {
-      "type": "application",
-      "root": "apps/neversitup-backend-interview-test",
-      "entryFile": "main",
-      "sourceRoot": "apps/neversitup-backend-interview-test/src",
-      "compilerOptions": {
-        "tsConfigPath": "apps/neversitup-backend-interview-test/tsconfig.app.json"
-      }
-    },
     "api-gateway": {
       "type": "application",
       "root": "apps/api-gateway",
