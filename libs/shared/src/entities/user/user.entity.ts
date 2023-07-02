@@ -1,11 +1,8 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column } from 'typeorm';
 import { AppBaseEntity } from '../entity';
 
 @Entity()
 export class User extends AppBaseEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
-
   @Column()
   displayName: string;
 

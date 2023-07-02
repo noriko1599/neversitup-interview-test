@@ -6,7 +6,10 @@ export class OrderPayment {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ default: 'payment_gateway_1' })
+  method: string;
+
+  @Column({ nullable: true })
   reference: string;
 
   @Column()
@@ -14,10 +17,10 @@ export class OrderPayment {
 
   @Column({
     type: 'enum',
-    enum: ['Arrangement', 'Settled', 'Cancelled'],
+    enum: ['Arrangement', 'Settled', 'Cancelled', 'Refunded'],
     default: 'Arrangement',
   })
-  status: 'Arrangement' | 'Settled' | 'Cancelled';
+  status: 'Arrangement' | 'Settled' | 'Cancelled' | 'Refunded';
 
   @OneToOne(() => Order, (order) => order.payment)
   order: Order;

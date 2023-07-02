@@ -8,6 +8,7 @@ import { Shipping } from '@app/shared/entities/order/shipping.entity';
 import { OrderPayment } from '@app/shared/entities/order/order-payment.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { OrderItemProduct } from '@app/shared/entities/order/order-item-product';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { OrderItemProduct } from '@app/shared/entities/order/order-item-product'
       OrderPayment,
       OrderItemProduct,
     ]),
+    HttpModule,
   ],
   controllers: [OrderController],
   providers: [OrderService],

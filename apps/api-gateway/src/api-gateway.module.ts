@@ -3,6 +3,8 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '@app/shared/entities/user/user.entity';
+import { OrderModule } from './order/order.module';
+import { ProductModule } from './product/product.module';
 
 @Module({
   imports: [
@@ -18,6 +20,8 @@ import { User } from '@app/shared/entities/user/user.entity';
       entities: [User],
       synchronize: true,
     }),
+    OrderModule,
+    ProductModule,
   ],
 })
 export class ApiGatewayModule {}

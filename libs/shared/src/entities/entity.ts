@@ -7,14 +7,14 @@ import {
 
 export abstract class AppBaseEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id?: number;
 
   @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  createdAt: Date;
+  createdAt?: Date;
 
   @UpdateDateColumn({ type: 'timestamp' })
-  updatedAt: Date;
+  updatedAt?: Date;
 
   @DeleteDateColumn({ type: 'timestamp' })
-  deletedAt: Date;
+  deletedAt?: Date;
 }

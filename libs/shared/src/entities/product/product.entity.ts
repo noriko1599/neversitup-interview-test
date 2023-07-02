@@ -1,11 +1,8 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity } from 'typeorm';
 import { AppBaseEntity } from '../entity';
 
 @Entity()
 export class Product extends AppBaseEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
-
   @Column()
   sku: string;
 
