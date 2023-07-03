@@ -15,7 +15,7 @@ The key technologies and services used in the project are:
 - **NestJS**: NestJS serves as the backbone of our application. We use it to build a high-performance API Gateway, manage our microservices, and handle all server-side logic. In addition, we've implemented a custom EventstoreDB transport layer and client within our NestJS application to facilitate communication between the microservices and the EventstoreDB.
 
 ## Getting Started
-
+- **E-Commerce**
 To run this project, you will need Docker and Docker Compose installed on your machine. Clone this repository and navigate to the root directory, then run the following command:
 
 ```sh
@@ -26,6 +26,13 @@ docker-compose up
 npm i
 npm run dev:all
 ```
+- **Logic Test**
+```sh
+npx ts-node .\logic-test\validate-pincode.ts
+```
+
+## Postman Collection
+- **Collection**: [Download Here](https://github.com/noriko1599/neversitup-interview-test/raw/main/postman.json)
 
 ## Architechture Diagram
 - **Overview**: ![Architecture Diagram](https://github.com/noriko1599/neversitup-interview-test/blob/main/Architecture.png)
