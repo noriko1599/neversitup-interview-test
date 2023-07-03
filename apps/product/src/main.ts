@@ -10,9 +10,8 @@ async function bootstrap() {
     {
       strategy: new EventstoreDBTransportStrategy({
         connectionString: 'esdb://localhost:2113?tls=false',
-        commandStream: 'command-product',
-        eventStream: '$ce-product',
-        group: 'services',
+        group: 'product-service',
+        category: 'product',
       }),
     },
   );

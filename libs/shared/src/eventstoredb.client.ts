@@ -55,6 +55,9 @@ export class EventstoreDBAppClient extends ClientProxy {
     });
 
     subscription.on('data', (resolvedEvent) => {
+      if (Number(resolvedEvent.event.revision) == 0) {
+        return;
+      }
       callback({
         response: resolvedEvent.event,
       });

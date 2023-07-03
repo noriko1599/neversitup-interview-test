@@ -8,13 +8,16 @@ import {
   EventStoreDBClient,
   PersistentSubscriptionToStream,
   ResolvedEvent,
+  persistentSubscriptionToAllSettingsFromDefaults,
+  streamNameFilter,
 } from '@eventstore/db-client';
+
+export type EventstoreDBTransportStrategyConfigCategory = 'order' | 'product';
 
 export class EventstoreDBTransportStrategyConfig {
   connectionString: string;
-  commandStream: string;
-  eventStream: string;
   group: string;
+  category: EventstoreDBTransportStrategyConfigCategory;
 
   constructor(payload: EventstoreDBTransportStrategyConfig) {
     Object.assign(this, payload);
@@ -26,49 +29,64 @@ export class EventstoreDBTransportStrategy
   implements CustomTransportStrategy
 {
   private client: EventStoreDBClient;
-  private commandSubscription: PersistentSubscriptionToStream;
   private eventSubscription: PersistentSubscriptionToStream;
-  private commandStream: string;
-  private eventStream: string;
   private group: string;
+  private category: EventstoreDBTransportStrategyConfigCategory;
 
   constructor(config: EventstoreDBTransportStrategyConfig) {
     super();
-    const { connectionString, commandStream, eventStream, group } = config;
+    const { connectionString, group, category } = config;
     this.client = EventStoreDBClient.connectionString(connectionString);
-    this.commandStream = commandStream;
-    this.eventStream = eventStream;
     this.group = group;
+    this.category = category;
   }
 
   public async listen(callback: () => void) {
-    this.listenCommand();
+    // await this.client.deletePersistentSubscriptionToAll(this.group);
     this.listenEvent();
 
     callback();
   }
 
-  private async listenCommand() {
-    this.commandSubscription =
-      this.client.subscribeToPersistentSubscriptionToStream(
-        this.commandStream,
-        this.group,
-      );
-
-    this.commandSubscription.on('data', (resolvedEvent) =>
-      this.processCommand(resolvedEvent),
-    );
-  }
   private async listenEvent() {
-    this.eventSubscription =
-      this.client.subscribeToPersistentSubscriptionToStream(
-        this.eventStream,
-        this.group,
-      );
+    try {
+      await this.client.getPersistentSubscriptionToAllInfo(this.group);
+      this.eventSubscription =
+        this.client.subscribeToPersistentSubscriptionToAll(this.group);
 
-    this.eventSubscription.on('data', (resolvedEvent) =>
-      this.processEvent(resolvedEvent),
-    );
+      this.eventSubscription.on('data', (resolvedEvent) =>
+        this.processEvent(resolvedEvent),
+      );
+    } catch (error) {
+      if (error.code == 5) {
+        await this.client.createPersistentSubscriptionToAll(
+          this.group,
+          persistentSubscriptionToAllSettingsFromDefaults({
+            startFrom: 'start',
+            resolveLinkTos: true,
+            readBatchSize: 1,
+            checkPointAfter: 50,
+            checkPointLowerBound: 1,
+            maxSubscriberCount: 64,
+          }),
+          {
+            filter: streamNameFilter({
+              prefixes: ['product-', 'order-'],
+            }),
+          },
+        );
+
+        this.listenEvent();
+        return;
+      }
+
+      console.error(
+        new Error(
+          `${EventstoreDBTransportStrategy.name} unhandle subscription error`,
+        ),
+      );
+      process.exit(500);
+    }
   }
 
   private async processEvent(resolvedEvent: ResolvedEvent) {
@@ -89,50 +107,29 @@ export class EventstoreDBTransportStrategy
 
     if (!handler) {
       console.log(`event ${message.pattern} no handler`);
+      const category = event.streamId.split('-')[0];
+      if (category != this.category) {
+        await this.eventSubscription.nack(
+          'skip',
+          'No handler found',
+          resolvedEvent,
+        );
+        return;
+      }
+
       await this.eventSubscription.nack(
-        'park',
+        'stop',
         'No handler found',
         resolvedEvent,
       );
-      return;
+      process.exit();
     }
 
     await handler(message.data);
     await this.eventSubscription.ack(resolvedEvent);
   }
 
-  private async processCommand(resolvedEvent: ResolvedEvent) {
-    const { event } = resolvedEvent;
-
-    if (!event) {
-      throw new Error(
-        `No event in resolvedEvent ${JSON.stringify(resolvedEvent, null, 2)}`,
-      );
-    }
-
-    const message: IncomingEvent = {
-      pattern: event.type,
-      data: event,
-    };
-
-    const handler = this.getHandlerByPattern(message.pattern);
-
-    if (!handler) {
-      console.log(`command ${message.pattern} no handler`);
-      await this.commandSubscription.nack(
-        'park',
-        'No handler found',
-        resolvedEvent,
-      );
-      return;
-    }
-
-    await handler(message.data);
-    await this.commandSubscription.ack(resolvedEvent);
-  }
-
   public async close() {
     this.eventSubscription.unsubscribe();
-    this.commandSubscription.unsubscribe();
   }
 }
