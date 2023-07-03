@@ -104,21 +104,7 @@ export class OrderController {
         }
       });
     } catch (error) {
-      console.error(error);
-
-      if (error instanceof HttpException) {
-        // rethrow the error if it's already an HttpException
-        throw error;
-      } else {
-        // unexpected error, throw a 500
-        throw new HttpException(
-          {
-            status: HttpStatus.INTERNAL_SERVER_ERROR,
-            error: 'An unexpected error occurred',
-          },
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
+      throw error;
     }
   }
 
