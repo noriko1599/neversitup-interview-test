@@ -3,14 +3,19 @@ import {
   EventTypeToRecordedEvent,
   JSONEventData,
   JSONEventType,
+  JSONType,
   jsonEvent,
 } from '@eventstore/db-client';
 import { ClientProxy, ReadPacket, WritePacket } from '@nestjs/microservices';
 import { v4 as uuid } from 'uuid';
-
+export const EventstoreDBClientToken = `EventstoreDBClientToken`;
 export class EventstoreDBAppClient extends ClientProxy {
   private connectionString: string;
-  private client: EventStoreDBClient;
+  private _eventstoredb: EventStoreDBClient;
+
+  get eventstoredb() {
+    return this._eventstoredb;
+  }
 
   constructor(connectionString: string) {
     super();
@@ -18,11 +23,13 @@ export class EventstoreDBAppClient extends ClientProxy {
   }
 
   async connect(): Promise<any> {
-    this.client = EventStoreDBClient.connectionString(this.connectionString);
+    this._eventstoredb = EventStoreDBClient.connectionString(
+      this.connectionString,
+    );
   }
 
   async close() {
-    await this.client.dispose();
+    await this._eventstoredb.dispose();
   }
 
   async dispatchEvent(
@@ -33,10 +40,7 @@ export class EventstoreDBAppClient extends ClientProxy {
     >,
   ): Promise<any> {
     const event = jsonEvent(packet.data);
-
-    this.client.appendToStream(packet.pattern, event, {
-      expectedRevision: BigInt(Number(packet.data.revision) + 1),
-    });
+    await this._eventstoredb.appendToStream(packet.pattern, event);
   }
 
   publish(
@@ -49,7 +53,7 @@ export class EventstoreDBAppClient extends ClientProxy {
   ) {
     const channel = `channel-${packet.data.metadata.$correlationId ?? uuid()}`;
 
-    const subscription = this.client.subscribeToStream(channel, {
+    const subscription = this._eventstoredb.subscribeToStream(channel, {
       resolveLinkTos: true,
       fromRevision: 'end',
     });
@@ -71,10 +75,24 @@ export class EventstoreDBAppClient extends ClientProxy {
 
     const request = jsonEvent(packet.data);
 
-    this.client.appendToStream(channel, request, {
+    this._eventstoredb.appendToStream(channel, request, {
       expectedRevision: 'no_stream',
     });
 
     return () => undefined;
+  }
+
+  createEvent<T extends JSONType>(type: string, data: T) {
+    const $correlationId = uuid();
+
+    const event = jsonEvent({
+      type,
+      data,
+      metadata: {
+        $correlationId,
+      },
+    });
+
+    return event;
   }
 }

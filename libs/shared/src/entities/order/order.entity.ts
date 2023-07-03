@@ -36,8 +36,8 @@ export class Order extends AppBaseEntity {
 
   @Column({
     type: 'enum',
-    enum: ['Open', 'Closed', 'Cancelled'],
+    enum: ['Creating', 'Open', 'Closed', 'Cancelled'],
     default: 'Open',
   })
-  status: 'Open' | 'Closed' | 'Cancelled';
+  status: 'Creating' | 'Open' | 'Closed' | 'Cancelled';
 }

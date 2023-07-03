@@ -3,6 +3,7 @@ import { ReserveProductResponseDTO } from '@app/shared/dto/product/reserve-produ
 import {
   OrderCreated,
   OrderCreatedPattern,
+  OrderCreatedPayload,
 } from '@app/shared/events/order/order-created.event';
 import { HttpService } from '@nestjs/axios';
 import {
@@ -14,18 +15,29 @@ import {
   Param,
   Post,
   Query,
+  Res,
 } from '@nestjs/common';
 import { EventPattern, MessagePattern } from '@nestjs/microservices';
 import { OrderService } from './order.service';
 import { CancelOrderDTO } from '@app/shared/dto/order/cancel-order.dto';
+import {
+  CreateOrderRequestFailedPattern,
+  CreateOrderRequestFailedPayload,
+} from '@app/shared/events/order/create-order-request-failed.event';
+import { Response } from 'express';
+import {
+  ProductQuantityReservedForOrderPattern,
+  ProductQuantityReservedForOrderPayload,
+} from '@app/shared/events/product/product-quantity-reserved-for-order.event';
+import {
+  ProductQuantityReservationForOrderFailedPattern,
+  ProductQuantityReservationForOrderFailedPayload,
+} from '@app/shared/events/product/product-quantity-reservation-for-order-failed.event';
+import { EventstoreDBAppEvent } from '@app/shared/events/event.interface';
 
 @Controller()
 export class OrderController {
-  constructor(
-    private readonly httpService: HttpService,
-    private readonly orderService: OrderService,
-  ) {}
-  private productHttpUrl = `http://localhost:3002`;
+  constructor(private readonly orderService: OrderService) {}
 
   @Get('user/:userId')
   async getUserOrders(@Param() params: { userId: number }) {
@@ -60,36 +72,34 @@ export class OrderController {
   }
 
   @Post()
-  async create(@Body() body: CreateOrderDTO) {
+  async create(@Body() body: CreateOrderDTO, @Res() res: Response) {
     try {
-      const { data: reserveProductResult } = await this.httpService
-        .post<ReserveProductResponseDTO>(
-          `${this.productHttpUrl}/reserveProducts`,
-          { items: body.items },
-        )
-        .toPromise();
+      const { id } = await this.orderService.createRequest(body);
 
-      if (reserveProductResult.failedReservations.length > 0) {
-        // throw an exception with a useful message and status code
-        throw new HttpException(
+      const subscription =
+        this.orderService.client.eventstoredb.subscribeToStream(
+          this.orderService.getEventstoreDBStreamName(id),
           {
-            status: HttpStatus.BAD_REQUEST,
-            error: 'Failed to reserve one or more items',
-            failedReservations: reserveProductResult.failedReservations,
+            resolveLinkTos: true,
+            fromRevision: 'start',
           },
-          HttpStatus.BAD_REQUEST,
         );
-      }
 
-      // If all reservations were successful, create the order
-      const order = await this.orderService.create(
-        body,
-        reserveProductResult.successfulReservations,
-      );
-      return {
-        order,
-        reservedProducts: reserveProductResult.successfulReservations,
-      };
+      subscription.on('data', (resolvedEvent) => {
+        const { event } = resolvedEvent;
+        if (event.type == OrderCreatedPattern) {
+          const { createdOrder } = event.data as OrderCreatedPayload;
+          res.status(201).json({ createdOrder });
+        }
+
+        if (event.type == CreateOrderRequestFailedPattern) {
+          const { failedProducts } =
+            event.data as CreateOrderRequestFailedPayload;
+          res.status(400).json({
+            failedProducts,
+          });
+        }
+      });
     } catch (error) {
       console.error(error);
 
@@ -153,5 +163,19 @@ export class OrderController {
         );
       }
     }
+  }
+
+  @EventPattern(ProductQuantityReservedForOrderPattern)
+  async createOrderWhenProductQuantityReserved(
+    payload: EventstoreDBAppEvent<ProductQuantityReservedForOrderPayload>,
+  ) {
+    await this.orderService.commitCreateRequest(payload.data);
+  }
+
+  @EventPattern(ProductQuantityReservationForOrderFailedPattern)
+  async handleProductQuantityReservationForOrderFailed(
+    payload: EventstoreDBAppEvent<ProductQuantityReservationForOrderFailedPayload>,
+  ) {
+    await this.orderService.rollbackCreateRequest(payload.data);
   }
 }

@@ -3,6 +3,11 @@ import { ProductController } from './product.controller';
 import { ProductService } from './product.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Product } from '@app/shared/entities/product/product.entity';
+import { ClientsModule } from '@nestjs/microservices';
+import {
+  EventstoreDBAppClient,
+  EventstoreDBClientToken,
+} from '@app/shared/eventstoredb.client';
 
 @Module({
   imports: [

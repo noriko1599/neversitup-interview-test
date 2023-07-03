@@ -1,14 +1,15 @@
 import { SuccessfulReservationDTO } from '@app/shared/dto/product/reserve-product.dto';
 import { IAppEvent } from '../event.interface';
 
-export const ProductQuantityReservedPattern = 'product_quantity_reserved';
+export const ProductQuantityReservedForOrderPattern =
+  'product_quantity_reserved_for_order';
 
-export type ProductQuantityReservedPayload = {
+export type ProductQuantityReservedForOrderPayload = {
   orderId: number;
   reservedProducts: SuccessfulReservationDTO[];
 };
 
-export type ProductQuantityReserved = IAppEvent<
-  'product_quantity_reserved',
-  ProductQuantityReservedPayload
+export type ProductQuantityReservedForOrder = IAppEvent<
+  'product_quantity_reserved_for_order',
+  ProductQuantityReservedForOrderPayload
 >;

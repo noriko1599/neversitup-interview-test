@@ -2,6 +2,12 @@ import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { ReserveProductDTO } from '@app/shared/dto/product/reserve-product.dto';
 import { FindProductDTO } from '@app/shared/dto/product/find-product.dto';
+import { EventPattern, MessagePattern } from '@nestjs/microservices';
+import {
+  CreateOrderRequestedPattern,
+  CreateOrderRequestedPayload,
+} from '@app/shared/events/order/create-order-requested.event';
+import { EventstoreDBAppEvent } from '@app/shared/events/event.interface';
 
 @Controller()
 export class ProductController {
@@ -29,9 +35,10 @@ export class ProductController {
     return product;
   }
 
-  @Post('reserveProducts')
-  async reserveProducts(@Body() body: ReserveProductDTO) {
-    const { items } = body;
-    return await this.productService.reserveProducts(items);
+  @EventPattern(CreateOrderRequestedPattern)
+  async reserveProductsWhenCreateOrderRequested(
+    payload: EventstoreDBAppEvent<CreateOrderRequestedPayload>,
+  ) {
+    await this.productService.reserveProducts(payload.data);
   }
 }

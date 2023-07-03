@@ -43,27 +43,25 @@ export class EventstoreDBTransportStrategy
 
   public async listen(callback: () => void) {
     // await this.client.deletePersistentSubscriptionToAll(this.group);
-    this.listenEvent();
-
-    callback();
+    this.listenEvent(callback);
   }
 
-  private async listenEvent() {
+  private async listenEvent(callback: () => void) {
     try {
       await this.client.getPersistentSubscriptionToAllInfo(this.group);
       this.eventSubscription =
         this.client.subscribeToPersistentSubscriptionToAll(this.group);
 
-      this.eventSubscription.on('data', (resolvedEvent) =>
-        this.processEvent(resolvedEvent),
-      );
+      this.eventSubscription.on('data', async (resolvedEvent) => {
+        await this.processEvent(resolvedEvent);
+      });
+      callback();
     } catch (error) {
       if (error.code == 5) {
         await this.client.createPersistentSubscriptionToAll(
           this.group,
           persistentSubscriptionToAllSettingsFromDefaults({
             startFrom: 'start',
-            resolveLinkTos: true,
             readBatchSize: 1,
             checkPointAfter: 50,
             checkPointLowerBound: 1,
@@ -76,7 +74,6 @@ export class EventstoreDBTransportStrategy
           },
         );
 
-        this.listenEvent();
         return;
       }
 
@@ -106,25 +103,14 @@ export class EventstoreDBTransportStrategy
     const handler = this.getHandlerByPattern(message.pattern);
 
     if (!handler) {
-      console.log(`event ${message.pattern} no handler`);
-      const category = event.streamId.split('-')[0];
-      if (category != this.category) {
-        await this.eventSubscription.nack(
-          'skip',
-          'No handler found',
-          resolvedEvent,
-        );
-        return;
-      }
+      console.log(`${this.category}: event ${message.pattern} no handler`);
 
-      await this.eventSubscription.nack(
-        'stop',
+      return await this.eventSubscription.nack(
+        'skip',
         'No handler found',
         resolvedEvent,
       );
-      process.exit();
     }
-
     await handler(message.data);
     await this.eventSubscription.ack(resolvedEvent);
   }

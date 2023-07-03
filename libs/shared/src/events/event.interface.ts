@@ -6,9 +6,12 @@ import {
   MetadataType,
 } from '@eventstore/db-client';
 
+export type EventstoreDBAppEvent<
+  T extends JSONType,
+  M = any,
+> = EventTypeToRecordedEvent<JSONEventData<JSONEventType<string, T, M>>>;
+
 export type IAppEvent<P extends string, D extends JSONType> = {
   pattern: P;
-  data: EventTypeToRecordedEvent<
-    JSONEventData<JSONEventType<string, D, MetadataType>>
-  >;
+  data: EventstoreDBAppEvent<D>;
 };
