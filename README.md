@@ -1,4 +1,4 @@
-# Project Title
+# Neversitup Interview Test
 
 ## Overview
 
@@ -32,12 +32,13 @@ npm run dev:all
 ```
 
 ## Architechture Diagram
-![Architecture Diagram](https://github.com/noriko1599/neversitup-interview-test/blob/main/Architecture.png)
+- **Overview**: ![Architecture Diagram](https://github.com/noriko1599/neversitup-interview-test/blob/main/Architecture.png)
+
+- **Handle Transaction Accross Services**: ![Handle Transaction Accross Services](https://github.com/noriko1599/neversitup-interview-test/blob/main/Handle_Transaction_Accross_Services.png)
 
 ## ER-Diagram
-- **User**
-![User](https://github.com/noriko1599/neversitup-interview-test/blob/main/User.png)
-- **Product**
-![Product](https://github.com/noriko1599/neversitup-interview-test/blob/main/Product.png)
-- **Order**
-![Order](https://github.com/noriko1599/neversitup-interview-test/blob/main/Order.png)
+- **User**: ![User](https://github.com/noriko1599/neversitup-interview-test/blob/main/User.png)
+
+- **Product**: ![Product](https://github.com/noriko1599/neversitup-interview-test/blob/main/Product.png)
+
+- **Order**: ![Order](https://github.com/noriko1599/neversitup-interview-test/blob/main/Order.png)
