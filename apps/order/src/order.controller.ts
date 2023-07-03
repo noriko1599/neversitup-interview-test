@@ -41,16 +41,19 @@ export class OrderController {
 
   @Get('user/:userId')
   async getUserOrders(@Param() params: { userId: number }) {
-    const order = await this.orderService.gerOrderRepository().findOne({
+    const orders = await this.orderService.gerOrderRepository().find({
       where: {
         customer: {
           uid: params.userId,
         },
       },
       relations: ['payment', 'customer', 'shipping', 'items', 'items.product'],
+      order: {
+        createdAt: 'DESC',
+      },
     });
 
-    return order;
+    return orders;
   }
 
   @Get(':id')
@@ -124,44 +127,13 @@ export class OrderController {
     try {
       const { orderId, uid } = body;
 
-      // Check if order exists and cancel the order
       const cancelledOrder = await this.orderService.cancelOrder(orderId, uid);
 
-      // Return a response message
       return {
-        message: 'Order has been cancelled successfully',
-        order: cancelledOrder,
+        cancelledOrder,
       };
     } catch (error) {
-      console.error(error);
-
-      // If the order is not found or another exception occurred, throw an HttpException
-      if (error.message === 'Order not found') {
-        throw new HttpException(
-          {
-            status: HttpStatus.NOT_FOUND,
-            error: 'Order not found',
-          },
-          HttpStatus.NOT_FOUND,
-        );
-      } else if (error.message.includes('Refund failed')) {
-        throw new HttpException(
-          {
-            status: HttpStatus.INTERNAL_SERVER_ERROR,
-            error: 'Refund failed. Order cancellation failed',
-            reason: error.message,
-          },
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      } else {
-        throw new HttpException(
-          {
-            status: HttpStatus.INTERNAL_SERVER_ERROR,
-            error: 'An unexpected error occurred',
-          },
-          HttpStatus.INTERNAL_SERVER_ERROR,
-        );
-      }
+      throw error;
     }
   }
 

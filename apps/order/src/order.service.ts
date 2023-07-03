@@ -16,8 +16,14 @@ import {
   CreateOrderRequestedPayload,
 } from '@app/shared/events/order/create-order-requested.event';
 import { v4 as uuid } from 'uuid';
-import { OrderCreatedPattern, OrderCreatedPayload } from '@app/shared/events/order/order-created.event';
-import { OrderCancelledPayload } from '@app/shared/events/order/order-cancelled.event';
+import {
+  OrderCreatedPattern,
+  OrderCreatedPayload,
+} from '@app/shared/events/order/order-created.event';
+import {
+  OrderCancelledPattern,
+  OrderCancelledPayload,
+} from '@app/shared/events/order/order-cancelled.event';
 import { ProductQuantityReservedForOrderPayload } from '@app/shared/events/product/product-quantity-reserved-for-order.event';
 import {
   ProductQuantityReservationForOrderFailedPattern,
@@ -181,7 +187,7 @@ export class OrderService {
             uid,
           },
         },
-        relations: ['payment'],
+        relations: ['customer', 'payment', 'items', 'items.product'],
       });
 
       // If order is not found, throw an error
@@ -200,7 +206,7 @@ export class OrderService {
       await queryRunner.commitTransaction();
 
       const event = this.client.createEvent<OrderCancelledPayload>(
-        CreateOrderRequestedPattern,
+        OrderCancelledPattern,
         {
           cancelledOrder: order,
         },

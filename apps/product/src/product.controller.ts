@@ -8,6 +8,10 @@ import {
   CreateOrderRequestedPayload,
 } from '@app/shared/events/order/create-order-requested.event';
 import { EventstoreDBAppEvent } from '@app/shared/events/event.interface';
+import {
+  OrderCancelledPattern,
+  OrderCancelledPayload,
+} from '@app/shared/events/order/order-cancelled.event';
 
 @Controller()
 export class ProductController {
@@ -39,6 +43,13 @@ export class ProductController {
   async reserveProductsWhenCreateOrderRequested(
     payload: EventstoreDBAppEvent<CreateOrderRequestedPayload>,
   ) {
-    await this.productService.reserveProducts(payload.data);
+    await this.productService.reserveQuantityForOrder(payload.data);
+  }
+
+  @EventPattern(OrderCancelledPattern)
+  async restoreProductQuantityWhenOrderCancelled(
+    payload: EventstoreDBAppEvent<OrderCancelledPayload>,
+  ) {
+    await this.productService.restoreQuantityFromOrder(payload.data);
   }
 }

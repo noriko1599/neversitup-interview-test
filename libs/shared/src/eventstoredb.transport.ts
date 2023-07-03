@@ -73,7 +73,7 @@ export class EventstoreDBTransportStrategy
             }),
           },
         );
-
+        this.listenEvent(callback);
         return;
       }
 

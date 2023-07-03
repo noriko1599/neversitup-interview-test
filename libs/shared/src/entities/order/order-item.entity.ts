@@ -1,6 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, ManyToOne, Column } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  Column,
+  JoinColumn,
+} from 'typeorm';
 import { Order } from './order.entity';
-import { Product } from '../product/product.entity';
 import { AppBaseEntity } from '../entity';
 import { OrderItemProduct } from './order-item-product';
 
@@ -13,6 +18,7 @@ export class OrderItem extends AppBaseEntity {
   order: Order;
 
   @ManyToOne(() => OrderItemProduct)
+  @JoinColumn()
   product: OrderItemProduct;
 
   @Column()

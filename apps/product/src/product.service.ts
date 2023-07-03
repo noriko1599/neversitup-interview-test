@@ -20,6 +20,11 @@ import {
   ProductQuantityReservedForOrderPattern,
   ProductQuantityReservedForOrderPayload,
 } from '@app/shared/events/product/product-quantity-reserved-for-order.event';
+import { OrderCancelledPayload } from '@app/shared/events/order/order-cancelled.event';
+import {
+  ProductQuantityRestoreFromOrderPattern,
+  ProductQuantityRestoreFromOrderPayload,
+} from '@app/shared/events/product/product-quantity-restored-from-order';
 
 @Injectable()
 export class ProductService implements OnModuleInit {
@@ -37,8 +42,10 @@ export class ProductService implements OnModuleInit {
     return this.productRepository;
   }
 
-  async onModuleInit() {
-    // await this.populateSampleDataIfNotExist();
+  onModuleInit() {
+    setTimeout(() => {
+      this.populateSampleDataIfNotExist();
+    }, 5000);
   }
 
   getEventstoreDBStreamName(id: number) {
@@ -50,29 +57,26 @@ export class ProductService implements OnModuleInit {
   }
 
   async populateSampleDataIfNotExist() {
-    // const count = await this.productRepository.count();
+    const count = await this.productRepository.count();
 
-    // if (count > 0) {
-    //   return;
-    // }
+    if (count > 0) {
+      return;
+    }
 
-    // const samples: Product[] = Array.from({ length: 1 }).map(() => {
-    //   return this.productRepository.create({
-    //     sku: faker.string.uuid(),
-    //     name: faker.commerce.productName(),
-    //     price: Number(faker.commerce.price({ min: 100, max: 100_000 })),
-    //     stock: faker.number.int({ min: 10, max: 100 }),
-    //   });
-    // });
-
-    const product = this.productRepository.create({
-      sku: faker.string.uuid(),
-      name: faker.commerce.productName(),
-      price: Number(faker.commerce.price({ min: 100, max: 100_000 })),
-      stock: faker.number.int({ min: 10, max: 100 }),
+    const samples: Product[] = Array.from({ length: 100 }).map(() => {
+      return this.productRepository.create({
+        sku: faker.string.uuid(),
+        name: faker.commerce.productName(),
+        price: Number(faker.commerce.price({ min: 100, max: 100_000 })),
+        stock: faker.number.int({ min: 10, max: 100 }),
+      });
     });
 
-    await this.create(product);
+    for (const sample of samples) {
+      console.log(sample);
+
+      await this.create(sample);
+    }
   }
 
   async create(payload: DeepPartial<Product>) {
@@ -90,7 +94,7 @@ export class ProductService implements OnModuleInit {
     return createdProduct;
   }
 
-  async reserveProducts(payload: CreateOrderRequestedPayload) {
+  async reserveQuantityForOrder(payload: CreateOrderRequestedPayload) {
     const queryRunner = this.connection.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -165,5 +169,44 @@ export class ProductService implements OnModuleInit {
       failedProducts,
       reservedProducts,
     };
+  }
+
+  async restoreQuantityFromOrder(payload: OrderCancelledPayload) {
+    const queryRunner = this.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      const { cancelledOrder } = payload;
+      const { items } = cancelledOrder;
+      for (const item of items) {
+        const product = await queryRunner.manager.findOneBy(Product, {
+          sku: item.product.sku,
+        });
+
+        product.stock += item.quantity;
+        await queryRunner.manager.save(product);
+      }
+      await queryRunner.commitTransaction();
+      const event =
+        this.client.createEvent<ProductQuantityRestoreFromOrderPayload>(
+          ProductQuantityRestoreFromOrderPattern,
+          {
+            orderId: cancelledOrder.id,
+            products: items,
+          },
+        );
+
+      this.client.emit(
+        this.getEventstoreDBOrderStreamName(payload.cancelledOrder.id),
+        event,
+      );
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+
+    return {};
   }
 }
